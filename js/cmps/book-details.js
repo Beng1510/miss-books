@@ -1,5 +1,5 @@
 // import './long-text.js';
-import {bookService} from '../service/book-service.js'
+import { bookService } from '../service/book-service.js'
 import reviewAdd from './review-add.js'
 
 export default {
@@ -8,7 +8,8 @@ export default {
       
         <!-- <section class="book-details" v-bind:class="PriceClass"> -->
         <section v-if="book" class="book-details flex">
-            <div class="details-main flex">
+          
+                <div class="details-main flex">
 
                 <div class="book-details-img-container flex column">
                     <img class="book-img-details" :src="imgUrl" />
@@ -32,6 +33,9 @@ export default {
                          <!-- <long-text :txt="book.description"></long-text> -->
 
                     <button class="back-btn" @click="emitBack()">BACK</button>
+                    <button class="next-btn" @click="changeBook(+1)">NEXT</button>
+                    <button class="prev-btn" @click="changeBook(-1)">PREV</button>
+
                 </div>  
             </div>
 
@@ -57,7 +61,7 @@ export default {
         bookOnSale() {
             if (this.book.listPrice.isOnSale) return 'ON SALE'
         },
-        priceClass() {  
+        priceClass() {
             return { red: this.book.listPrice.amount > 150, green: this.book.listPrice.amount < 20 }
         },
         imgUrl() {
@@ -68,32 +72,43 @@ export default {
         },
         bookDesc() {
             if (this.book.description.length > 100) {
-               
-                return this.book.description.substring(0,100) + "...";
+
+                return this.book.description.substring(0, 100) + "...";
             }
-            else { 
+            else {
                 return this.book.description
-            } 
+            }
         },
         categories() {
-            return this.book.categories.join(", ") 
+            return this.book.categories.join(", ")
         }
     },
     methods: {
         emitBack() {
-            this.$emit('selected', null )
+            this.$emit('selected', null)
+        },
+        changeBook(diff) {
+            const nextId = bookService.getNextBookId(this.book.id, diff);
+            this.$router.push(`/book/${nextId}`);
+            this.hideText = true;
         }
     },
     components: {
         reviewAdd
     },
+    watch: {
+        '$route.params.bookId'() {
+            bookService.getBookById(this.$route.params.bookId)
+                .then(book => this.book = book)
+        }
+    },
     mounted() {
-        console.log( 'IN MOUNTED');
+        console.log('IN MOUNTED');
     },
     created() {
         console.log('book details created');
         const id = this.$route.params.bookId
-        console.log('id',id);
+        console.log('id', id);
 
         bookService.getBookById(id)
             .then(book => this.book = book)

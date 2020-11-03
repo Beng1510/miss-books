@@ -11,6 +11,7 @@ export default {
                 | <router-link to="/" exact>Home</router-link> |
                 <router-link to="/about">About Us</router-link> |
                 <router-link to="/book" exact>Book App</router-link> |
+                <router-link to="/book/add" exact>Add Book</router-link> |
             </nav>
         </section>
     `,

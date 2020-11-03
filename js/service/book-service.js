@@ -1,13 +1,19 @@
 import { utilService } from './util-service.js'
 
 const BOOKS_DB = 'bookdb'
+const GOOGLE_BOOKS_DB = 'googleBookDb'
+// var gGoogleBooks;
 
 export const bookService = {
     getBooks,
     getBookById,
     getEmptyReview,
     addReview,
-    removeReview
+    removeReview,
+    getGoogleBooks,
+    searchBook,
+    addGoogleBook,
+    getNextBookId
 }
 const defaultBooks = [
     {
@@ -379,14 +385,8 @@ const defaultBooks = [
 ];
 var gBooks = utilService.loadFromStorage(BOOKS_DB) ? utilService.loadFromStorage(BOOKS_DB) : defaultBooks;
 
-// var gReviews = []
-// function getDefaultBooks() {
-//     return 
-// }
 
 function getBooks() {
-    // gBooks = utilService.loadFromStorage(BOOKS_DB)
-    // if(!gBooks || !gBooks.length) gBooks = getDefaultBooks()
     return Promise.resolve(gBooks);
 }
 
@@ -407,10 +407,8 @@ function addReview(bookId, review) {
                 if (!book.reviews) book.reviews = []
                 book.reviews.push(review)
                 utilService.storeToStorage(BOOKS_DB, gBooks)
-
             })
     )
-
 }
 
 
@@ -421,7 +419,83 @@ function removeReview(reviewId, bookId) {
                 getReviewIdxById(reviewId, idx)
                     .then(revIdx => {
                         gBooks[idx].reviews.splice(revIdx, 1);
-                        utilService.saveToStorage(BOOKS_DB, gBooks);
+                        utilService.storeToStorage(BOOKS_DB, gBooks);
                     })
             }))
+}
+
+function getReviewIdxById(reviewId, bookIdx) {
+    return Promise.resolve(gBooks[bookIdx].reviews.findIndex(review => review.is === reviewId))
+}
+
+function getBookIdxById(id) {
+    return Promise.resolve(gBooks.findIndex(book => book.id === id))
+}
+
+function getGoogleBooks() {
+
+    if (!utilService.loadFromStorage(GOOGLE_BOOKS_DB)) {
+
+        return axios.get('https://www.googleapis.com/books/v1/volumes?printType=books&q=effective%20javascript')
+            .then(res => res.data)
+            .then(data => {
+                console.log('data', data);
+                const books = formatGoogleBooks(data)
+                utilService.storeToStorage(GOOGLE_BOOKS_DB, books)
+                return books
+
+            })
+    } else return Promise.resolve(utilService.loadFromStorage(GOOGLE_BOOKS_DB))
+}
+
+function formatGoogleBooks(rawBooksData) {
+    console.log('rawBooksData', rawBooksData);
+    // console.log('rawBooksData', rawBooksData.items[0].id);
+
+    return rawBooksData.items.map(item => {
+        console.log('id', item.id);
+        console.log('id', item.volumeInfo.title);
+
+        return {
+            id: item.id,
+            title: item.volumeInfo.title,
+            subtitle: item.volumeInfo.subtitle,
+            authors: item.volumeInfo.authors,
+            publishedDate: item.volumeInfo.publishedDate,
+            description: item.volumeInfo.description,
+            pageCount: item.volumeInfo.pageCount,
+            categories: 'Google Book',
+            thumbnail: item.volumeInfo.imageLinks.thumbnail,
+            // language: item.volumeInfo.imageLinks.language,
+            listPrice: {
+                amount: 100,
+                currencyCode: "EUR",
+                isOnSale: true
+            }
+        }
+})
+}
+
+function searchBook(searchTerm) {
+    console.log('searchTerm:', searchTerm);
+    return axios.get(`https://www.googleapis.com/books/v1/volumes?printType=books&q=${searchTerm}`)
+        .then(res => {
+            console.log('res', res)
+
+            return Promise.resolve(formatGoogleBooks(res.data))
+            // return res.data.items
+        })
+
+}
+
+function addGoogleBook(book) {
+    gBooks.unshift(book);
+    return Promise.resolve(gBooks)
+}
+
+function getNextBookId(bookId, diff) {
+    const currIdx = gBooks.findIndex(book => book.id === bookId)
+    var nextIdx = currIdx + diff
+    nextIdx = (nextIdx < 0) ? gBooks.length - 1: (nextIdx === gBooks.length) ? 0 : nextIdx;
+    return gBooks[nextIdx].id;
 }

@@ -5,6 +5,8 @@ export default {
       
         <section class="book-preview">
 
+            <!-- <book-add></book-add> -->
+
             <div class="book-title-container">
 
                 <p class="book-title" >{{book.title}}</p>
@@ -13,6 +15,7 @@ export default {
         <img class="book-img" :src="imgUrl" />
         <p class="book-price">{{getCurrency}}</p>
 
+        <!-- <router-link :to='/book/add' exact>Add</router-link> -->
         <router-link :to="'/book/' +book.id " exact>Details</router-link>
         
         </section>
